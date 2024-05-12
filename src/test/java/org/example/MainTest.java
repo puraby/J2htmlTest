@@ -5,6 +5,13 @@ import static j2html.TagCreator.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MainTest {
+    /**
+     * Basic HTML Tags: Test generating each type of HTML tag (e.g., <p>, <div>, <span>, etc.).
+     * Attributes: Test adding attributes to tags (e.g., id, class, data-* attributes).
+     * Nesting: Test the correct nesting of tags.
+     * Content Safety: Test to ensure that text content is properly escaped to prevent XSS (Cross-Site Scripting).
+     * Special Cases: Test edge cases like empty elements, self-closing tags, and incorrect attribute values.
+     */
 
     @Test
     void generateHtml() {
@@ -15,11 +22,13 @@ class MainTest {
 
         // Then
         assertEquals(expectedHtml, generatedHtml);
+        System.out.println("test");
     }
     @Test
     public void testDivTag() {
         String expectedHtml = "<div>This is a div.</div>";
         String actualHtml = div("This is a div.").render();
+
         assertEquals(expectedHtml, actualHtml);
     }
 
