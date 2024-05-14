@@ -1,6 +1,13 @@
 package org.example;
 
+import j2html.tags.ContainerTag;
+import j2html.tags.DomContent;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
 import static j2html.TagCreator.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,6 +38,163 @@ class MainTest {
 
         assertEquals(expectedHtml, actualHtml);
     }
+    @Test
+    //Basic Content Test
+    public void testDivWithSimpleText() {
+        String result = div("Simple Text").render();
+        assertEquals("<div>Simple Text</div>", result);
+    }
+    @Test
+    //Empty Div Test
+    public void testEmptyDiv() {
+        String result = div().render();
+        assertEquals("<div></div>", result);
+    }
+    //Div With Class Attribute
+    @Test
+    public void testDivWithClass() {
+        String result = div().withClass("container").render();
+        assertEquals("<div class=\"container\"></div>", result);
+    }
+    //Div With Id Attribute
+    @Test
+    public void testDivWithId() {
+        String result = div().withId("main").render();
+        assertEquals("<div id=\"main\"></div>", result);
+    }
+
+    //Div With Multiple Classes
+    @Test
+    public void testDivWithMultipleClasses() {
+        String result = div().withClass("container fluid").render();
+        assertEquals("<div class=\"container fluid\"></div>", result);
+    }
+
+    //Div With Style
+    @Test
+    public void testDivWithStyle() {
+        String result = div().withStyle("color: red;").render();
+        assertEquals("<div style=\"color: red;\"></div>", result);
+    }
+
+    //Nested Divs
+    @Test
+    public void testNestedDivs() {
+        String result = div(
+                div("Inner")
+        ).render();
+        assertEquals("<div><div>Inner</div></div>", result);
+    }
+    //Div With Data Attribute
+    @Test
+    public void testDivWithDataAttribute() {
+        String result = div().attr("data-value", "123").render();
+        assertEquals("<div data-value=\"123\"></div>", result);
+    }
+   //Div With Arbitrary Attribute
+   @Test
+   public void testDivWithArbitraryAttribute() {
+       String result = div().attr("custom-attr", "value").render();
+       assertEquals("<div custom-attr=\"value\"></div>", result);
+   }
+    //Div Containing Image Tag
+    @Test
+    public void testDivContainingImage() {
+        String result = div(img().withSrc("image.jpg")).render();
+        assertEquals("<div><img src=\"image.jpg\"></div>", result);
+    }
+   // Div Containing Link and Text:
+   @Test
+   public void testDivContainingLinkAndText() {
+       String result = div(
+               text("Visit "),
+               a("Google").withHref("http://google.com")
+       ).render();
+       assertEquals("<div>Visit <a href=\"http://google.com\">Google</a></div>", result);
+   }
+   //Div With Special Characters
+   @Test
+   public void testDivWithSpecialCharacters() {
+       String result = div("<script>alert('xss');</script>").render();
+       System.out.println(result);
+       assertEquals("<div>&lt;script&gt;alert(&#x27;xss&#x27;);&lt;/script&gt;</div>", result);
+   }
+   //Div With Click Event
+   @Test
+   public void testDivWithOnclick() {
+       String result = div("Clickable").attr("onclick", "console.log('clicked');").render();
+       assertEquals("<div onclick=\"console.log(&#x27;clicked&#x27;);\">Clickable</div>", result);
+   }
+
+   //Div with Nested List
+   @Test
+   public void testDivWithNestedList() {
+       String result = div(
+               ul(
+                       li("Item 1"),
+                       li("Item 2")
+               )
+       ).render();
+       assertEquals("<div><ul><li>Item 1</li><li>Item 2</li></ul></div>", result);
+   }
+   //Div with Form Elements
+   @Test
+   public void testDivWithFormElements() {
+       String result = div(
+               form().withMethod("post").with(
+                       input().withType("text"),
+                       input().withType("submit")
+               )
+       ).render();
+       assertEquals("<div><form method=\"post\"><input type=\"text\"><input type=\"submit\"></form></div>", result);
+   }
+   //Div With Role Attribute
+   @Test
+   public void testDivWithRole() {
+       String result = div().attr("role", "banner").render();
+       assertEquals("<div role=\"banner\"></div>", result);
+   }
+   //Div with Multiple Nested Elements
+   @Test
+   public void testDivWithMultipleNestedElements() {
+       String result = div(
+               p("Paragraph inside div."),
+               a("Link").withHref("#"),
+               span("Span inside div.")
+       ).render();
+       assertEquals("<div><p>Paragraph inside div.</p><a href=\"#\">Link</a><span>Span inside div.</span></div>", result);
+   }
+ //Div with Multiple Attributes
+    @Test
+    public void testDivWithMultipleAttributes() {
+        String result = div().withClass("foo").withId("bar").withStyle("color: red;").render();
+        assertEquals("<div class=\"foo\" id=\"bar\" style=\"color: red;\"></div>", result);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Test
     public void testSpanTag() {
@@ -205,6 +369,117 @@ class MainTest {
         String actualHtml = iframe().withSrc("https://example.com").attr("sandbox", "allow-scripts").render();
         assertEquals(expectedHtml, actualHtml);
     }
+
+
+
+    @Test
+    public void testInvalidAttribute() {
+        String result = a("Click here").attr("href", "invalidurl").render();
+        assertTrue(result.contains("href=\"invalidurl\""));
+    }
+    @Test
+    public void testImproperNesting() {
+        String result = p(ul(li("Item"))).render();
+        assertFalse(result.equals("<p><ul><li>Item</li></ul></p>")); // Expecting it to not be a valid nesting, depends on library behavior
+    }
+
+    @Test
+    public void testSpecialCharactersEscape() {
+        String result = p("Hello <script>alert('hack');</script>").render();
+        assertFalse(result.contains("<script>"));
+    }
+    @Test
+    public void testEmptyElement() {
+        String result = img().render();
+        assertTrue(result.equals("<img>")); // Test based on expected behavior; some tags might need attributes like src
+    }
+
+    @Test
+    public void performanceLargeHtmlGeneration() {
+        long startTime = System.currentTimeMillis();
+        StringBuilder largeHtml = new StringBuilder();
+        for (int i = 0; i < 10000; i++) {
+            largeHtml.append(p("Paragraph " + i).render());
+        }
+        long endTime = System.currentTimeMillis();
+        System.out.println("Execution time for generating large HTML: " + (endTime - startTime) + " ms");
+        assertNotNull(largeHtml.toString());
+    }
+
+    @Test
+    public void testConcurrentHtmlGeneration() {
+        ExecutorService service = Executors.newFixedThreadPool(10);
+        List<Callable<String>> tasks = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            tasks.add(() -> div("Content " + Thread.currentThread().getId()).render());
+        }
+        try {
+            List<Future<String>> results = service.invokeAll(tasks);
+            for (Future<String> result : results) {
+                assertNotNull(result.get());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        } finally {
+            service.shutdown();
+        }
+    }
+
+    @Test
+    public void testAttributeOverriding() {
+        String result = a("Link").withHref("http://example1.com").withHref("http://example2.com").render();
+        assertTrue(result.contains("href=\"http://example2.com\""));
+    }
+    @Test
+    public void testBooleanAttributes() {
+        String result = input().withType("checkbox").isChecked().render();
+        assertTrue(result.contains("checked"));
+    }
+
+    @Test
+    public void testCssStyle() {
+        String result = p("Text").withStyle("color: red;").render();
+        assertTrue(result.contains("style=\"color: red;\""));
+    }
+
+    @Test
+    public void testInlineJavaScript() {
+        String result = button("Click me").attr("onclick", "alert('Clicked!');").render();
+        assertTrue(result.contains("onclick=\"alert('Clicked!');\""));
+    }
+
+    @Test
+    public void testInlineJavaScript2() {
+        String result = button("Click me").attr("onclick", "alert('Clicked!');").render();
+        // Adjust the assertion to check for the HTML entity encoded version of the quotes
+        assertTrue(result.contains("onclick=\"alert(&#x27;Clicked!&#x27;);\""));
+    }
+
+
+    @Test
+    public void testSelfClosingTags() {
+        String result = div(img().render() + br().render()).render();
+        System.out.println(result);
+        assertTrue(result.contains("<img>") && result.contains("<br>"));
+    }
+    @Test
+    public void testHtmlEscaping() {
+        String result = p("<script>alert('xss');</script>").render();
+        assertFalse(result.contains("<script>"));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
